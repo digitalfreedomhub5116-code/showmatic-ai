@@ -49,7 +49,7 @@ export default async function DashboardPage() {
             <p className="text-sm text-muted-foreground">Welcome back,</p>
             <h1 className="text-2xl font-bold tracking-tight">{displayName}</h1>
           </div>
-          <Link href="/dashboard/templates">
+          <Link href="/dashboard/projects/new">
             <Button>Create New Video</Button>
           </Link>
         </CardContent>
