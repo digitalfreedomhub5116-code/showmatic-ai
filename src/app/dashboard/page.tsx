@@ -7,31 +7,38 @@ import { Card, CardContent, CardHeader, CardTitle, Button } from '@/components/u
 
 export default async function DashboardPage() {
   const user = await getCurrentUser();
-  if (!user) return null;
 
-  const workspace = await getUserWorkspace(user.id);
-  const displayName = user.name || user.email.split('@')[0];
+  // If getCurrentUser returns null but we're on /dashboard, it means
+  // the user IS authenticated (middleware passed) but DB might be down.
+  const displayName = user?.name || user?.email?.split('@')[0] || 'there';
 
-  // Fetch real project data
-  let recentProjects: typeof projects.$inferSelect[] = [];
+  // Fetch real project data (with error handling)
+  let recentProjects: any[] = [];
   let projectCount = 0;
 
-  if (workspace) {
-    recentProjects = await db
-      .select()
-      .from(projects)
-      .where(eq(projects.workspaceId, workspace.id))
-      .orderBy(desc(projects.updatedAt))
-      .limit(5);
+  try {
+    if (user) {
+      const workspace = await getUserWorkspace(user.id);
+      if (workspace) {
+        recentProjects = await db
+          .select()
+          .from(projects)
+          .where(eq(projects.workspaceId, workspace.id))
+          .orderBy(desc(projects.updatedAt))
+          .limit(5);
 
-    const allProjects = await db
-      .select()
-      .from(projects)
-      .where(eq(projects.workspaceId, workspace.id));
-    projectCount = allProjects.length;
+        const allProjects = await db
+          .select()
+          .from(projects)
+          .where(eq(projects.workspaceId, workspace.id));
+        projectCount = allProjects.length;
+      }
+    }
+  } catch (error) {
+    console.error('[dashboard] Failed to fetch projects:', error);
   }
 
-  const exportCount = recentProjects.filter(p => p.status === 'rendered').length;
+  const exportCount = recentProjects.filter((p: any) => p.status === 'rendered').length;
 
   return (
     <div className="space-y-6">
@@ -75,7 +82,7 @@ export default async function DashboardPage() {
               </div>
             ) : (
               <div className="space-y-3">
-                {recentProjects.map((p) => (
+                {recentProjects.map((p: any) => (
                   <Link
                     key={p.id}
                     href={`/dashboard/projects/${p.id}`}

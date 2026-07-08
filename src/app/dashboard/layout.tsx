@@ -3,9 +3,19 @@ import { createClient } from '@/lib/supabase/server';
 import { DashboardSidebar } from '@/components/dashboard/sidebar';
 import { DashboardHeader } from '@/components/dashboard/header';
 
+// All dashboard routes require auth (cookies) — never prerender them
+export const dynamic = 'force-dynamic';
+
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  let user = null;
+
+  try {
+    const supabase = await createClient();
+    const { data } = await supabase.auth.getUser();
+    user = data?.user || null;
+  } catch (error) {
+    console.error('[dashboard layout] Auth check failed:', error);
+  }
 
   if (!user) {
     redirect('/auth/login');
