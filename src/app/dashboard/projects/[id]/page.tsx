@@ -5,6 +5,7 @@ import { db } from '@/lib/db';
 import { projects } from '@/lib/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { Card, CardContent, CardHeader, CardTitle, Button } from '@/components/ui';
+import { RenderButton } from '@/components/dashboard/render-button';
 import type { Scene } from '@/lib/db/schema/projects';
 
 interface Props {
@@ -43,9 +44,15 @@ export default async function ProjectPage({ params }: Props) {
             <p className="mt-1 text-sm text-muted-foreground">{project.description}</p>
           )}
         </div>
-        <span className={`rounded-full px-3 py-1 text-xs font-medium capitalize ${statusColor(project.status)}`}>
-          {project.status}
-        </span>
+        <div className="flex items-center gap-3">
+          <span className={`rounded-full px-3 py-1 text-xs font-medium capitalize ${statusColor(project.status)}`}>
+            {project.status}
+          </span>
+          <Link href={`/dashboard/projects/${id}/edit`}>
+            <Button variant="outline">Edit Scenes</Button>
+          </Link>
+          <RenderButton projectId={id} status={project.status} />
+        </div>
       </div>
 
       {/* Progress Steps */}
@@ -62,6 +69,21 @@ export default async function ProjectPage({ params }: Props) {
           </div>
         ))}
       </div>
+
+      {/* Export URL */}
+      {project.exportUrl && (
+        <Card className="mt-6 border-green-200 bg-green-50/50">
+          <CardContent className="flex items-center justify-between p-5">
+            <div>
+              <div className="font-semibold text-green-800">Video Ready</div>
+              <div className="text-sm text-green-700">Your video has been rendered and is ready to download.</div>
+            </div>
+            <a href={project.exportUrl} target="_blank" rel="noopener noreferrer">
+              <Button>Download MP4</Button>
+            </a>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Scenes */}
       {scenes.length > 0 && (
