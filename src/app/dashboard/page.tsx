@@ -1,176 +1,109 @@
 import Link from 'next/link';
-import { getCurrentUser, getUserWorkspace } from '@/lib/auth';
+import { getCurrentUser } from '@/lib/auth';
 import { db } from '@/lib/db';
-import { projects } from '@/lib/db/schema';
-import { eq, desc } from 'drizzle-orm';
-import { Card, CardContent, CardHeader, CardTitle, Button } from '@/components/ui';
+import { templates } from '@/lib/db/schema';
+import { eq } from 'drizzle-orm';
+import { Button } from '@/components/ui';
+import { TemplateGrid } from '@/components/dashboard/template-grid';
 
 export default async function DashboardPage() {
   const user = await getCurrentUser();
-
-  // If getCurrentUser returns null but we're on /dashboard, it means
-  // the user IS authenticated (middleware passed) but DB might be down.
   const displayName = user?.name || user?.email?.split('@')[0] || 'there';
 
-  // Fetch real project data (with error handling)
-  let recentProjects: any[] = [];
-  let projectCount = 0;
-
+  let allTemplates: any[] = [];
   try {
-    if (user) {
-      const workspace = await getUserWorkspace(user.id);
-      if (workspace) {
-        recentProjects = await db
-          .select()
-          .from(projects)
-          .where(eq(projects.workspaceId, workspace.id))
-          .orderBy(desc(projects.updatedAt))
-          .limit(5);
-
-        const allProjects = await db
-          .select()
-          .from(projects)
-          .where(eq(projects.workspaceId, workspace.id));
-        projectCount = allProjects.length;
-      }
-    }
-  } catch (error) {
-    console.error('[dashboard] Failed to fetch projects:', error);
+    allTemplates = await db
+      .select()
+      .from(templates)
+      .where(eq(templates.isPublic, true));
+  } catch (e) {
+    console.error('[dashboard] Failed to fetch templates:', e);
   }
 
-  const exportCount = recentProjects.filter((p: any) => p.status === 'rendered').length;
-
   return (
-    <div className="space-y-6">
-      {/* Welcome banner */}
-      <Card>
-        <CardContent className="flex flex-wrap items-center justify-between gap-4 p-6">
-          <div>
-            <p className="text-sm text-muted-foreground">Welcome back,</p>
-            <h1 className="text-2xl font-bold tracking-tight">{displayName}</h1>
+    <div className="space-y-10">
+      {/* Hero Section */}
+      <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-violet-950 to-slate-900 px-8 py-14 text-white">
+        <div className="relative z-10 mx-auto max-w-3xl text-center">
+          <h1 className="text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl">
+            Your <span className="text-violet-400">SaaS Videos</span> are easier
+            <br />with Showmatic<span className="text-violet-400">.ai</span>
+          </h1>
+          <p className="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-slate-300">
+            Describe the video you want to make. For example, create a product explainer for my CRM tool targeting startup founders.
+          </p>
+
+          {/* Prompt Box */}
+          <div className="mx-auto mt-8 max-w-2xl">
+            <Link href="/dashboard/projects/new">
+              <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-5 py-4 text-left backdrop-blur transition-colors hover:border-violet-400/30 hover:bg-white/10">
+                <div className="flex-1 text-sm text-slate-400">
+                  Describe the video you want to make...
+                </div>
+                <Button size="sm" className="shrink-0 bg-violet-600 hover:bg-violet-500">
+                  Create Video
+                </Button>
+              </div>
+            </Link>
           </div>
-          <Link href="/dashboard/projects/new">
-            <Button>Create New Video</Button>
+
+          {/* Filter Chips */}
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
+            <FilterChip label="Category" icon="✦" />
+            <FilterChip label="Orientation" icon="⊞" />
+            <Link href="/dashboard/templates">
+              <Button variant="outline" size="sm" className="border-white/20 text-white hover:bg-white/10">
+                Find Template
+              </Button>
+            </Link>
+          </div>
+        </div>
+
+        {/* Background decoration */}
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(124,58,237,0.15),transparent_50%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(6,182,212,0.1),transparent_50%)]" />
+      </section>
+
+      {/* Trending Templates */}
+      <section>
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-bold tracking-tight">Trending Templates</h2>
+          <Link href="/dashboard/templates" className="text-sm text-muted-foreground hover:text-foreground">
+            Browse all
           </Link>
-        </CardContent>
-      </Card>
+        </div>
 
-      {/* Stats */}
-      <div className="grid gap-4 md:grid-cols-3">
-        <StatCard label="Projects" value={String(projectCount)} />
-        <StatCard label="Exports" value={String(exportCount)} />
-        <StatCard label="Credits Left" value="3" />
-      </div>
+        {/* Category Pills */}
+        <div className="mt-4 flex flex-wrap gap-2">
+          {['All', 'SaaS', 'Product Demo', 'Launch Teaser', 'Onboarding', 'Paid Ad'].map((cat, i) => (
+            <button
+              key={cat}
+              className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
+                i === 0
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-muted text-muted-foreground hover:bg-muted/80'
+              }`}
+            >
+              {cat}
+            </button>
+          ))}
+        </div>
 
-      {/* Main content grid */}
-      <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-        {/* Recent projects */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Recent Projects</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {recentProjects.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-8 text-center">
-                <div className="text-4xl">🎬</div>
-                <p className="mt-3 text-sm text-muted-foreground">
-                  No projects yet. Create your first video to get started.
-                </p>
-                <Link href="/dashboard/templates" className="mt-4">
-                  <Button variant="outline" size="sm">Browse Templates</Button>
-                </Link>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {recentProjects.map((p: any) => (
-                  <Link
-                    key={p.id}
-                    href={`/dashboard/projects/${p.id}`}
-                    className="flex items-center justify-between rounded-lg border p-4 transition-colors hover:bg-muted/50"
-                  >
-                    <div>
-                      <div className="font-medium">{p.name}</div>
-                      <div className="text-sm text-muted-foreground">
-                        Updated {formatRelativeTime(p.updatedAt)}
-                      </div>
-                    </div>
-                    <StatusBadge status={p.status} />
-                  </Link>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Quick actions */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Quick Actions</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <Link
-              href="/dashboard/templates"
-              className="block rounded-lg bg-foreground px-4 py-3.5 font-medium text-background transition-opacity hover:opacity-90"
-            >
-              Pick a template
-            </Link>
-            <Link
-              href="/dashboard/brand-kit"
-              className="block rounded-lg border px-4 py-3.5 font-medium transition-colors hover:bg-muted"
-            >
-              Set up brand kit
-            </Link>
-            <Link
-              href="/dashboard/assets"
-              className="block rounded-lg border px-4 py-3.5 font-medium transition-colors hover:bg-muted"
-            >
-              Upload assets
-            </Link>
-          </CardContent>
-        </Card>
-      </div>
+        {/* Template Grid */}
+        <div className="mt-6">
+          <TemplateGrid templates={allTemplates} />
+        </div>
+      </section>
     </div>
   );
 }
 
-function StatCard({ label, value }: { label: string; value: string }) {
+function FilterChip({ label, icon }: { label: string; icon: string }) {
   return (
-    <Card>
-      <CardContent className="p-5">
-        <div className="text-sm text-muted-foreground">{label}</div>
-        <div className="mt-1 text-3xl font-bold tracking-tight">{value}</div>
-      </CardContent>
-    </Card>
+    <button className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/5 px-4 py-1.5 text-xs font-medium text-slate-300 transition-colors hover:bg-white/10">
+      <span>{icon}</span>
+      {label}
+      <span className="text-slate-500">▾</span>
+    </button>
   );
-}
-
-function StatusBadge({ status }: { status: string }) {
-  const colors: Record<string, string> = {
-    draft: 'bg-slate-100 text-slate-700',
-    scripting: 'bg-blue-100 text-blue-700',
-    storyboarding: 'bg-purple-100 text-purple-700',
-    editing: 'bg-amber-100 text-amber-700',
-    rendering: 'bg-orange-100 text-orange-700',
-    rendered: 'bg-green-100 text-green-700',
-    archived: 'bg-gray-100 text-gray-500',
-  };
-
-  return (
-    <span className={`rounded-full px-3 py-1 text-xs font-medium capitalize ${colors[status] || colors.draft}`}>
-      {status}
-    </span>
-  );
-}
-
-function formatRelativeTime(date: Date): string {
-  const now = new Date();
-  const diff = now.getTime() - new Date(date).getTime();
-  const minutes = Math.floor(diff / 60000);
-  if (minutes < 1) return 'just now';
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  if (days < 7) return `${days}d ago`;
-  return new Date(date).toLocaleDateString();
 }

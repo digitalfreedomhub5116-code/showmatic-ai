@@ -1,56 +1,53 @@
 import { db } from '@/lib/db';
 import { templates } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
-import { Card, CardContent, Button } from '@/components/ui';
-import { CreateProjectButton } from '@/components/dashboard/create-project-button';
+import { TemplateGrid } from '@/components/dashboard/template-grid';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = { title: 'Templates' };
 
 export default async function TemplatesPage() {
-  const allTemplates = await db
-    .select()
-    .from(templates)
-    .where(eq(templates.isPublic, true));
+  let allTemplates: any[] = [];
+  try {
+    allTemplates = await db
+      .select()
+      .from(templates)
+      .where(eq(templates.isPublic, true));
+  } catch (e) {
+    console.error('[templates] Failed to fetch:', e);
+  }
 
   return (
     <div>
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Template Library</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Choose a SaaS-specific starting point for your video.</p>
+          <h1 className="text-2xl font-bold tracking-tight">Trending Templates</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Choose a starting point and customize it to your product.
+          </p>
         </div>
+        <span className="text-sm text-muted-foreground">Browse all</span>
       </div>
 
-      <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {allTemplates.map((t) => (
-          <Card key={t.id} className="flex flex-col">
-            <CardContent className="flex flex-1 flex-col p-5">
-              <div className="flex items-start justify-between">
-                <div>
-                  <h3 className="font-semibold">{t.name}</h3>
-                  <p className="mt-0.5 text-xs text-muted-foreground">
-                    {t.category} &middot; {t.durationSeconds}s
-                  </p>
-                </div>
-                <CreateProjectButton templateId={t.id} templateName={t.name} />
-              </div>
-              <p className="mt-3 flex-1 text-sm text-muted-foreground">{t.description}</p>
-              <div className="mt-4 rounded-lg bg-gradient-to-br from-slate-900 to-slate-800 p-4">
-                <div className="flex flex-wrap gap-1.5">
-                  {(t.scenes as any[])?.map((scene: any) => (
-                    <span
-                      key={scene.id}
-                      className="rounded bg-white/10 px-2 py-0.5 text-xs text-slate-300"
-                    >
-                      {scene.title}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+      {/* Category Pills */}
+      <div className="mt-5 flex flex-wrap gap-2">
+        {['All', 'SaaS', 'Product Demo', 'Launch Teaser', 'Onboarding', 'Paid Ad', 'Testimonial'].map((cat, i) => (
+          <button
+            key={cat}
+            className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
+              i === 0
+                ? 'bg-primary text-primary-foreground'
+                : 'border bg-card text-muted-foreground hover:bg-muted'
+            }`}
+          >
+            {cat}
+          </button>
         ))}
+      </div>
+
+      {/* Template Grid */}
+      <div className="mt-8">
+        <TemplateGrid templates={allTemplates} />
       </div>
     </div>
   );
