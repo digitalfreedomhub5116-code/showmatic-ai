@@ -28,11 +28,11 @@ export function DashboardHeader({ user }: DashboardHeaderProps) {
     .slice(0, 2);
 
   return (
-    <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b bg-card/80 px-6 backdrop-blur-sm">
+    <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-border/50 bg-background/80 px-6 backdrop-blur-sm">
       <div />
       <div className="flex items-center gap-4">
         <span className="text-sm text-muted-foreground">{user.email}</span>
-        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
+        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/20 text-xs font-semibold text-primary">
           {initials}
         </div>
         <Button variant="ghost" size="sm" onClick={handleSignOut}>

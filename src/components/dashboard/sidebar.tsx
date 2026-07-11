@@ -23,7 +23,7 @@ export function DashboardSidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="sticky top-0 flex h-screen w-[260px] flex-col border-r bg-card">
+    <aside className="sticky top-0 flex h-screen w-[260px] flex-col border-r border-border/50 bg-card/50">
       <div className="p-6">
         <ShowmaticLogo />
       </div>
@@ -38,8 +38,8 @@ export function DashboardSidebar() {
               className={cn(
                 'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
                 isActive
-                  ? 'bg-primary/10 text-primary'
-                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                  ? 'bg-primary/15 text-primary'
+                  : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
               )}
             >
               <item.icon className="h-4 w-4" />
@@ -49,7 +49,7 @@ export function DashboardSidebar() {
         })}
       </nav>
 
-      <div className="border-t px-3 py-4 space-y-1">
+      <div className="border-t border-border/50 px-3 py-4 space-y-1">
         {bottomNavigation.map((item) => {
           const isActive = pathname === item.href;
           return (
@@ -59,8 +59,8 @@ export function DashboardSidebar() {
               className={cn(
                 'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
                 isActive
-                  ? 'bg-primary/10 text-primary'
-                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                  ? 'bg-primary/15 text-primary'
+                  : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
               )}
             >
               <item.icon className="h-4 w-4" />
@@ -73,7 +73,6 @@ export function DashboardSidebar() {
   );
 }
 
-// Inline icons — lightweight, no external deps needed
 function HomeIcon({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">

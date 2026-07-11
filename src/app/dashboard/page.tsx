@@ -1,29 +1,13 @@
 import Link from 'next/link';
-import { getCurrentUser } from '@/lib/auth';
-import { db } from '@/lib/db';
-import { templates } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
 import { Button } from '@/components/ui';
 import { TemplateGrid } from '@/components/dashboard/template-grid';
+import { TEMPLATES, TEMPLATE_CATEGORIES } from '@/lib/templates-data';
 
-export default async function DashboardPage() {
-  const user = await getCurrentUser();
-  const displayName = user?.name || user?.email?.split('@')[0] || 'there';
-
-  let allTemplates: any[] = [];
-  try {
-    allTemplates = await db
-      .select()
-      .from(templates)
-      .where(eq(templates.isPublic, true));
-  } catch (e) {
-    console.error('[dashboard] Failed to fetch templates:', e);
-  }
-
+export default function DashboardPage() {
   return (
     <div className="space-y-10">
       {/* Hero Section */}
-      <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-violet-950 to-slate-900 px-8 py-14 text-white">
+      <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-violet-950/80 to-slate-900 px-8 py-14 text-white">
         <div className="relative z-10 mx-auto max-w-3xl text-center">
           <h1 className="text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl">
             Your <span className="text-violet-400">SaaS Videos</span> are easier
@@ -60,7 +44,7 @@ export default async function DashboardPage() {
         </div>
 
         {/* Background decoration */}
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(124,58,237,0.15),transparent_50%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(124,58,237,0.2),transparent_50%)]" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(6,182,212,0.1),transparent_50%)]" />
       </section>
 
@@ -75,13 +59,13 @@ export default async function DashboardPage() {
 
         {/* Category Pills */}
         <div className="mt-4 flex flex-wrap gap-2">
-          {['All', 'SaaS', 'Product Demo', 'Launch Teaser', 'Onboarding', 'Paid Ad'].map((cat, i) => (
+          {TEMPLATE_CATEGORIES.map((cat, i) => (
             <button
               key={cat}
               className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
                 i === 0
                   ? 'bg-primary text-primary-foreground'
-                  : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                  : 'border border-border bg-secondary text-muted-foreground hover:text-foreground'
               }`}
             >
               {cat}
@@ -91,7 +75,7 @@ export default async function DashboardPage() {
 
         {/* Template Grid */}
         <div className="mt-6">
-          <TemplateGrid templates={allTemplates} />
+          <TemplateGrid templates={TEMPLATES} />
         </div>
       </section>
     </div>

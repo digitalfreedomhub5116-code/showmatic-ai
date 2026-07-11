@@ -31,14 +31,14 @@ export function ShowmaticLogo({ compact = false, className }: LogoProps) {
       {!compact && (
         <div>
           <div className="text-lg font-bold tracking-tight text-foreground">
-            Showmatic<span className="text-violet-600">.ai</span>
+            Showmatic<span className="text-violet-400">.ai</span>
           </div>
           <div className="text-xs text-muted-foreground">SaaS videos, made simple.</div>
         </div>
       )}
       {compact && (
         <div className="text-lg font-bold tracking-tight text-foreground">
-          Showmatic<span className="text-violet-600">.ai</span>
+          Showmatic<span className="text-violet-400">.ai</span>
         </div>
       )}
     </div>

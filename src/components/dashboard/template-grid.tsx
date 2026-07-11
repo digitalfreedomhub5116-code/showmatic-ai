@@ -1,24 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-
-interface Template {
-  id: string;
-  name: string;
-  description: string | null;
-  category: string;
-  durationSeconds: number;
-  scenes: any[];
-}
+import type { TemplateData, TemplateScene } from '@/lib/templates-data';
 
 interface TemplateGridProps {
-  templates: Template[];
+  templates: TemplateData[];
 }
 
 export function TemplateGrid({ templates }: TemplateGridProps) {
   return (
-    <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+    <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
       {templates.map((template) => (
         <TemplateCard key={template.id} template={template} />
       ))}
@@ -26,12 +18,29 @@ export function TemplateGrid({ templates }: TemplateGridProps) {
   );
 }
 
-function TemplateCard({ template }: { template: Template }) {
+function TemplateCard({ template }: { template: TemplateData }) {
   const [isHovered, setIsHovered] = useState(false);
+  const [currentSceneIndex, setCurrentSceneIndex] = useState(0);
   const [loading, setLoading] = useState(false);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const router = useRouter();
 
-  const sceneColors = getSceneGradient(template.category);
+  useEffect(() => {
+    if (isHovered && template.scenes.length > 0) {
+      intervalRef.current = setInterval(() => {
+        setCurrentSceneIndex((prev) => (prev + 1) % template.scenes.length);
+      }, 1800);
+    } else {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+      setCurrentSceneIndex(0);
+    }
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, [isHovered, template.scenes.length]);
 
   async function handleUse() {
     setLoading(true);
@@ -55,120 +64,85 @@ function TemplateCard({ template }: { template: Template }) {
     }
   }
 
+  const scene = template.scenes[currentSceneIndex];
+
   return (
     <div
-      className="group relative overflow-hidden rounded-xl border bg-card transition-all duration-300 hover:shadow-lg hover:shadow-violet-500/10 hover:-translate-y-1"
+      className="group relative overflow-hidden rounded-xl border border-border/50 bg-card transition-all duration-300 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 hover:-translate-y-1 cursor-pointer"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
+      onClick={handleUse}
     >
       {/* Preview Area */}
       <div
-        className="relative aspect-[4/5] overflow-hidden"
-        style={{ background: sceneColors }}
+        className="relative aspect-[3/4] overflow-hidden"
+        style={{ background: template.gradient }}
       >
-        {/* Animated Scene Preview on Hover */}
-        <div className="absolute inset-0 flex flex-col items-center justify-center p-4 text-center">
-          {isHovered ? (
-            <HoverPreview scenes={template.scenes} category={template.category} />
+        {/* Scene Content */}
+        <div className="absolute inset-0 flex flex-col items-center justify-center p-5 text-center transition-all duration-500">
+          {isHovered && scene ? (
+            <div className="animate-fade-in flex flex-col items-center gap-2">
+              <span className="rounded-full bg-white/10 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-violet-300 backdrop-blur">
+                {scene.type.replace('_', ' ')}
+              </span>
+              <h3 className="text-sm font-bold text-white drop-shadow-lg">
+                {scene.title}
+              </h3>
+              <p className="text-[11px] leading-relaxed text-white/60 line-clamp-3">
+                &ldquo;{scene.narration}&rdquo;
+              </p>
+              {/* Scene progress dots */}
+              <div className="mt-3 flex gap-1">
+                {template.scenes.map((_, i) => (
+                  <div
+                    key={i}
+                    className={`h-1 rounded-full transition-all duration-300 ${
+                      i === currentSceneIndex ? 'w-4 bg-violet-400' : 'w-1.5 bg-white/25'
+                    }`}
+                  />
+                ))}
+              </div>
+            </div>
           ) : (
-            <StaticPreview name={template.name} category={template.category} />
+            <div className="flex flex-col items-center gap-3">
+              <h3 className="text-base font-bold text-white drop-shadow-lg">
+                {template.name}
+              </h3>
+              <span className="rounded-full bg-white/10 px-3 py-1 text-[11px] font-medium text-white/70 backdrop-blur">
+                {template.category}
+              </span>
+              <span className="text-[10px] text-white/40">
+                {template.scenes.length} scenes · {template.durationSeconds}s
+              </span>
+            </div>
           )}
         </div>
 
-        {/* Play / Arrow buttons */}
-        <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between opacity-0 transition-opacity group-hover:opacity-100">
-          <button className="flex h-8 w-8 items-center justify-center rounded-full bg-white/20 backdrop-blur transition-colors hover:bg-white/30">
-            <svg className="h-3 w-3 text-white" fill="currentColor" viewBox="0 0 24 24">
+        {/* Hover overlay buttons */}
+        <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+          <button className="flex h-8 w-8 items-center justify-center rounded-full bg-black/40 backdrop-blur-sm transition hover:bg-black/60">
+            <svg className="h-3.5 w-3.5 text-white" fill="currentColor" viewBox="0 0 24 24">
               <path d="M8 5v14l11-7z" />
             </svg>
           </button>
-          <button
-            onClick={handleUse}
-            disabled={loading}
-            className="flex h-8 w-8 items-center justify-center rounded-full bg-white/20 backdrop-blur transition-colors hover:bg-white/30"
-          >
-            <svg className="h-3 w-3 text-white" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <button className="flex h-8 w-8 items-center justify-center rounded-full bg-black/40 backdrop-blur-sm transition hover:bg-black/60">
+            <svg className="h-3.5 w-3.5 text-white" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
             </svg>
           </button>
         </div>
 
         {/* Duration badge */}
-        <div className="absolute top-3 right-3 rounded bg-black/50 px-2 py-0.5 text-xs font-medium text-white backdrop-blur">
+        <div className="absolute top-2.5 right-2.5 rounded-md bg-black/50 px-2 py-0.5 text-[10px] font-semibold text-white/80 backdrop-blur-sm">
           {template.durationSeconds}s
         </div>
       </div>
 
-      {/* Info */}
+      {/* Bottom info */}
       <div className="p-3">
         <div className="text-sm font-medium truncate">{template.name}</div>
-        <div className="mt-0.5 text-xs text-muted-foreground">{template.category}</div>
+        <div className="mt-0.5 text-xs text-muted-foreground">{template.category} · {template.scenes.length} scenes</div>
       </div>
     </div>
   );
-}
-
-function StaticPreview({ name, category }: { name: string; category: string }) {
-  return (
-    <div className="flex flex-col items-center gap-3">
-      <div className="text-lg font-bold text-white/90 drop-shadow-lg">{name}</div>
-      <div className="rounded-full bg-white/10 px-3 py-1 text-xs text-white/70 backdrop-blur">
-        {category}
-      </div>
-    </div>
-  );
-}
-
-function HoverPreview({ scenes, category }: { scenes: any[]; category: string }) {
-  // Animate through scenes on hover
-  const [currentScene, setCurrentScene] = useState(0);
-
-  // Auto-advance scenes
-  if (typeof window !== 'undefined') {
-    setTimeout(() => {
-      if (scenes && scenes.length > 0) {
-        setCurrentScene((prev) => (prev + 1) % scenes.length);
-      }
-    }, 1500);
-  }
-
-  const scene = scenes?.[currentScene];
-  if (!scene) return <StaticPreview name="Preview" category={category} />;
-
-  return (
-    <div className="flex flex-col items-center gap-2 animate-fade-in px-3">
-      <div className="rounded bg-violet-500/20 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-violet-300">
-        {scene.type}
-      </div>
-      <div className="text-base font-bold text-white drop-shadow-lg">
-        {scene.title}
-      </div>
-      {scene.narration && (
-        <p className="text-xs text-white/60 line-clamp-2 leading-relaxed">
-          {scene.narration}
-        </p>
-      )}
-      {/* Scene progress dots */}
-      <div className="mt-2 flex gap-1">
-        {scenes.map((_: any, i: number) => (
-          <div
-            key={i}
-            className={`h-1 rounded-full transition-all ${
-              i === currentScene ? 'w-4 bg-violet-400' : 'w-1 bg-white/30'
-            }`}
-          />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function getSceneGradient(category: string): string {
-  const gradients: Record<string, string> = {
-    Explainer: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)',
-    Product: 'linear-gradient(135deg, #0d1117 0%, #161b22 50%, #21262d 100%)',
-    Marketing: 'linear-gradient(135deg, #1a0a2e 0%, #2d1b69 50%, #11001c 100%)',
-    'Social Proof': 'linear-gradient(135deg, #0a192f 0%, #112240 50%, #1d3557 100%)',
-  };
-  return gradients[category] || 'linear-gradient(135deg, #1a1a2e 0%, #0f0f23 100%)';
 }

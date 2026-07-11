@@ -1,22 +1,11 @@
-import { db } from '@/lib/db';
-import { templates } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
+import Link from 'next/link';
 import { TemplateGrid } from '@/components/dashboard/template-grid';
+import { TEMPLATES, TEMPLATE_CATEGORIES } from '@/lib/templates-data';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = { title: 'Templates' };
 
-export default async function TemplatesPage() {
-  let allTemplates: any[] = [];
-  try {
-    allTemplates = await db
-      .select()
-      .from(templates)
-      .where(eq(templates.isPublic, true));
-  } catch (e) {
-    console.error('[templates] Failed to fetch:', e);
-  }
-
+export default function TemplatesPage() {
   return (
     <div>
       <div className="flex items-center justify-between">
@@ -26,18 +15,20 @@ export default async function TemplatesPage() {
             Choose a starting point and customize it to your product.
           </p>
         </div>
-        <span className="text-sm text-muted-foreground">Browse all</span>
+        <Link href="/dashboard/projects/new" className="text-sm text-primary hover:underline">
+          Create from scratch
+        </Link>
       </div>
 
       {/* Category Pills */}
       <div className="mt-5 flex flex-wrap gap-2">
-        {['All', 'SaaS', 'Product Demo', 'Launch Teaser', 'Onboarding', 'Paid Ad', 'Testimonial'].map((cat, i) => (
+        {TEMPLATE_CATEGORIES.map((cat, i) => (
           <button
             key={cat}
             className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
               i === 0
                 ? 'bg-primary text-primary-foreground'
-                : 'border bg-card text-muted-foreground hover:bg-muted'
+                : 'border border-border bg-secondary text-muted-foreground hover:text-foreground'
             }`}
           >
             {cat}
@@ -47,7 +38,7 @@ export default async function TemplatesPage() {
 
       {/* Template Grid */}
       <div className="mt-8">
-        <TemplateGrid templates={allTemplates} />
+        <TemplateGrid templates={TEMPLATES} />
       </div>
     </div>
   );
