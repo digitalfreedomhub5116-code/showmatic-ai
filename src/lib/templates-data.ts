@@ -10,6 +10,7 @@ export interface TemplateData {
   category: string;
   durationSeconds: number;
   gradient: string;
+  previewUrl?: string;
   scenes: TemplateScene[];
 }
 
@@ -32,6 +33,7 @@ export const TEMPLATES: TemplateData[] = [
     category: 'SaaS',
     durationSeconds: 60,
     gradient: 'linear-gradient(135deg, #1a0533 0%, #2d1b69 40%, #7c3aed 100%)',
+    previewUrl: '/previews/tpl-saas-intro.webm',
     scenes: [
       { id: 's1', order: 0, type: 'hook', title: 'The Problem', content: 'Bold statement about the pain point', narration: 'Every day, teams waste hours on tasks that should take minutes.', durationSeconds: 10, transition: 'fade' },
       { id: 's2', order: 1, type: 'feature', title: 'Meet the Solution', content: 'Product logo + tagline reveal', narration: 'Introducing [Product] — the smarter way to get things done.', durationSeconds: 12, transition: 'slide' },

@@ -22,15 +22,30 @@ function TemplateCard({ template }: { template: TemplateData }) {
   const [isHovered, setIsHovered] = useState(false);
   const [currentSceneIndex, setCurrentSceneIndex] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [videoError, setVideoError] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const router = useRouter();
 
+  const previewUrl = template.previewUrl || `/previews/${template.id}.webm`;
+
   useEffect(() => {
-    if (isHovered && template.scenes.length > 0) {
-      intervalRef.current = setInterval(() => {
-        setCurrentSceneIndex((prev) => (prev + 1) % template.scenes.length);
-      }, 1800);
+    if (isHovered) {
+      // Try to play video
+      if (videoRef.current && !videoError) {
+        videoRef.current.currentTime = 0;
+        videoRef.current.play().catch(() => setVideoError(true));
+      }
+      // Fallback: animate scenes
+      if (videoError || !videoRef.current) {
+        intervalRef.current = setInterval(() => {
+          setCurrentSceneIndex((prev) => (prev + 1) % template.scenes.length);
+        }, 1800);
+      }
     } else {
+      if (videoRef.current) {
+        videoRef.current.pause();
+      }
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
         intervalRef.current = null;
@@ -40,7 +55,7 @@ function TemplateCard({ template }: { template: TemplateData }) {
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, [isHovered, template.scenes.length]);
+  }, [isHovered, videoError, template.scenes.length]);
 
   async function handleUse() {
     setLoading(true);
@@ -78,8 +93,24 @@ function TemplateCard({ template }: { template: TemplateData }) {
         className="relative aspect-[3/4] overflow-hidden"
         style={{ background: template.gradient }}
       >
-        {/* Scene Content */}
-        <div className="absolute inset-0 flex flex-col items-center justify-center p-5 text-center transition-all duration-500">
+        {/* Video Preview (plays on hover) */}
+        <video
+          ref={videoRef}
+          src={previewUrl}
+          muted
+          loop
+          playsInline
+          preload="none"
+          onError={() => setVideoError(true)}
+          className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-300 ${
+            isHovered && !videoError ? 'opacity-100' : 'opacity-0'
+          }`}
+        />
+
+        {/* Scene Content (fallback or static) */}
+        <div className={`absolute inset-0 flex flex-col items-center justify-center p-5 text-center transition-all duration-500 ${
+          isHovered && !videoError ? 'opacity-0' : 'opacity-100'
+        }`}>
           {isHovered && scene ? (
             <div className="animate-fade-in flex flex-col items-center gap-2">
               <span className="rounded-full bg-white/10 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-violet-300 backdrop-blur">
